@@ -51,7 +51,7 @@ for i, (ax, (name, d)) in enumerate(zip(axes, res.groupby('dataset'))):
     tag = name.capitalize()
     nums.update({f'percTest{tag}': f'{100 * p.test.mean():.1f}', f'percTestSD{tag}': f'{100 * p.test.std():.1f}',
                  f'percTestMax{tag}': f'{100 * p.test.max():.1f}', f'svmTest{tag}': f'{100 * s.test:.1f}'})
-    ax.set_title(f'({"ab"[i]}) {name}: perceptrons {nums[f"percTest{tag}"]} $\\pm$ {nums[f"percTestSD{tag}"]}%, '
+    ax.set_title(f'({"ab"[i]}) {name}\nperceptrons {nums[f"percTest{tag}"]} $\\pm$ {nums[f"percTestSD{tag}"]}%, '
                  f'SVM {nums[f"svmTest{tag}"]}%')
 save(fig, 'perceptron_svm')
 lin = res[res.dataset == 'linear']

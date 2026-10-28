@@ -39,7 +39,7 @@ CLASS = [BLUE, ORANGE]
 INK, MUTED, TEXT = '#0b0b0b', '#898781', '#52514e'
 RAMP = ['#0d366b', '#1c5cab', '#3987e5', '#86b6ef']  # ordered levels, darkest = cleanest
 
-plt.rcParams.update({'font.size': 11, 'axes.labelsize': 12, 'axes.titlesize': 12, 'legend.fontsize': 10,
+plt.rcParams.update({'font.size': 13, 'axes.labelsize': 13, 'axes.titlesize': 13, 'legend.fontsize': 12,
                      'lines.linewidth': 2, 'axes.spines.top': False, 'axes.spines.right': False,
                      'axes.edgecolor': '#c3c2b7', 'axes.labelcolor': INK, 'xtick.color': TEXT, 'ytick.color': TEXT,
                      'legend.frameon': False, 'savefig.facecolor': 'white'})
@@ -153,7 +153,7 @@ def threshold(ax, x=None):
     """The THRESHOLD line in percent, labelled at x when given."""
     ax.axhline(100 * THRESHOLD, color=INK, lw=0.8, ls='--')
     if x is not None:
-        ax.text(x, 100 * THRESHOLD + 1, f'{100 * THRESHOLD:.0f}% threshold', fontsize=9, color=TEXT)
+        ax.text(x, 100 * THRESHOLD + 1, f'{100 * THRESHOLD:.0f}% threshold', fontsize=11, color=TEXT)
 
 
 def save(fig, name):

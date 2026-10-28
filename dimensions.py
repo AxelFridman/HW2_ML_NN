@@ -60,7 +60,7 @@ for i, (ax, name) in enumerate(zip(axes, NAMES)):
         nums.update({f'dim{name}{WORD[p]}{WORD[d]}': f'{m[d]:.1f}' for d in DIMS})
     ax.set(xticks=DIMS, xlabel='dimension $d$', title=f'({"ab"[i]}) {name}, best SVM')
 axes[0].set(ylabel='test accuracy (%)')
-axes[0].legend(loc='lower left', fontsize=9)
+axes[0].legend(loc='lower left')
 save(fig, 'dimensions')
 save_tex('dimensions', **nums)
 print(mean.round(2), std.round(2), memorised.round(1), nums, sep='\n')

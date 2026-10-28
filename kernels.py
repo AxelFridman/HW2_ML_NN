@@ -8,13 +8,14 @@ from sklearn.metrics import confusion_matrix, f1_score, roc_auc_score, roc_curve
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 
-from common import AQUA, CLASS, CV, INK, JOBS, MUTED, OUT, SPIRAL, YELLOW, R, load, save, save_tex, scatter
+from common import AQUA, CLASS, CV, INK, JOBS, OUT, SPIRAL, YELLOW, R, load, save, save_tex, scatter
 
 C = [0.1, 1, 10]
 KERNELS = {'RBF': (SVC(kernel='rbf'), {'gamma': [1, 3, 10, 30, 100], 'C': C}),
            'Poly': (SVC(kernel='poly', coef0=1), {'degree': [3, 5, 7, 9, 11, 13], 'C': C})}
 COLOR = {'RBF': AQUA, 'Poly': YELLOW}
 TITLE = {'RBF': 'RBF', 'Poly': 'polynomial'}
+LINE = {'RBF': '-', 'Poly': '--'}
 
 Xtr, Xte, ytr, yte = load('spiral')
 search = {k: GridSearchCV(m, p, cv=CV, n_jobs=JOBS).fit(Xtr, ytr) for k, (m, p) in KERNELS.items()}
@@ -22,7 +23,7 @@ results = {k: pd.DataFrame(gs.cv_results_) for k, gs in search.items()}
 
 lim = (-R(SPIRAL['K']) - 0.6, R(SPIRAL['K']) + 0.6)
 xx, yy = np.meshgrid(np.linspace(*lim, 400), np.linspace(*lim, 400))
-fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
+fig, axes = plt.subplots(1, 3, figsize=(15, 4.8), layout='constrained')
 nums = {}
 for i, (name, gs) in enumerate(search.items()):
     results[name].to_csv(f'{OUT}/cv_{name}.csv', index=False)
@@ -40,11 +41,11 @@ for i, (name, gs) in enumerate(search.items()):
     ax.contour(xx, yy, f, levels=[0], colors=INK, linewidths=1)
     ax.set(xlim=lim, ylim=lim, title=f'({"ab"[i]}) {TITLE[name]}: test accuracy {nums[f"acc{name}"]}%')
     fpr, tpr, _ = roc_curve(yte, score)
-    axes[2].plot(fpr, tpr, color=COLOR[name], label=f'{TITLE[name]} (AUC {nums[f"auc{name}"]})')
+    axes[2].plot(fpr, tpr, color=COLOR[name], ls=LINE[name], label=f'{TITLE[name]} (AUC {nums[f"auc{name}"]})')
 axes[0].plot([], [], color=INK, lw=1, label='decision boundary')
-axes[0].legend(loc='lower left', fontsize=9)
-axes[2].plot([0, 1], [0, 1], color=MUTED, lw=0.8)
-axes[2].set(xlabel='false-positive rate', ylabel='true-positive rate', aspect='equal', title='(c) ROC on the test set')
+axes[0].legend(loc='lower left')
+axes[2].set(xlim=(0, 0.12), ylim=(0.8, 1), xticks=[0, 0.04, 0.08, 0.12], yticks=[0.8, 0.85, 0.9, 0.95, 1],
+            xlabel='false-positive rate', ylabel='true-positive rate', title='(c) ROC on the test set (zoomed)')
 axes[2].legend(loc='lower right')
 save(fig, 'kernels')
 

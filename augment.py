@@ -91,7 +91,6 @@ for i, (level, (X, y, pred)) in enumerate(shown.items()):
     ax.contour(xx, yy, f, levels=[0], colors=INK, linewidths=0.8)
     ax.set(xlim=lim, ylim=lim,
            title=f'({"ab"[i]}) {level} SD, $\\sigma$ = {SD[level]}: accuracy {100 * (1 - wrong.mean()):.1f}%')
-axes[0].legend(loc='lower left', fontsize=9)
 
 ax = axes[2]
 style = {('spiral', 'best'): dict(color=AQUA, label='spiral: best SVM'),
@@ -106,9 +105,10 @@ for name, g in sweep.groupby('dataset'):
 for j, sd in enumerate(SD.values()):
     ax.axvline(sd, color=MUTED, lw=0.8, alpha=0.5, label='low and high SD' if j == 0 else None)
 threshold(ax, 0.011)
-ax.set(xscale='log', ylim=(45, 101), xlabel='augmentation SD $\\sigma$',
-       ylabel=f'mean accuracy over {K_SWEEP} datasets (%)', title='(c) accuracy against noise SD')
-ax.legend(loc='lower left', fontsize=9)
+ax.set(xscale='log', ylim=(45, 101), xlabel='augmentation SD $\\sigma$', ylabel='mean accuracy (%)',
+       title='(c) accuracy against noise SD')
+entries = [sum(lists, []) for lists in zip(*(a.get_legend_handles_labels() for a in (axes[0], axes[2])))]
+fig.legend(*entries, loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.17))
 save(fig, 'augment')
 save_tex('augment', kAug=f'{K:,}', mAug=f'{M_AUG:,}', sdLow=SD['low'], sdHigh=SD['high'], kSweep=K_SWEEP,
          thr=f'{100 * THRESHOLD:.0f}', gammaOver=OVERFIT['gamma'], COver=OVERFIT['C'], **nums)

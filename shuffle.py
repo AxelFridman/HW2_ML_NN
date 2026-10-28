@@ -46,7 +46,7 @@ for i, (ax, name) in enumerate(zip(axes, NAMES)):
     threshold(ax, 1 if i == 0 else None)
     ax.set(xticks=P, xlabel='training labels shuffled (%)', title=f'({"ab"[i]}) {name}, best SVM')
 axes[0].set(ylabel='accuracy (%)')
-axes[0].legend(loc='lower left', fontsize=9)
+axes[0].legend(loc='lower left')
 save(fig, 'shuffle')
 wrong = 100 * res.groupby('p').wrong.mean()
 save_tex('shuffle', reps=REPS, kEval=K_EVAL, wrongFifty=f'{wrong[50]:.1f}', wrongHundred=f'{wrong[100]:.1f}', **nums)
