@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedKFold
 from sklearn.svm import SVC
 
 matplotlib.use('Agg')
@@ -21,6 +22,8 @@ N = 10_000                                        # points per dataset, half in 
 TEST = 0.3                                        # held-out share of every dataset
 LINEAR = dict(center=1.5, noise=0.4)              # clusters 4.2 apart, 0.4 SD each
 SPIRAL = dict(K=4 * np.pi, noise=0.1)             # two turns; neighbouring arms 0.5 apart
+JOBS = 4                                          # parallel workers
+CV = StratifiedKFold(5, shuffle=True, random_state=SEED)
 
 BLUE, ORANGE, AQUA, YELLOW = '#2a78d6', '#eb6834', '#1baf7a', '#eda100'
 CLASS = [BLUE, ORANGE]
