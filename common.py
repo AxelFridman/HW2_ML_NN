@@ -22,6 +22,9 @@ N = 10_000                                        # points per dataset, half in 
 TEST = 0.3                                        # held-out share of every dataset
 LINEAR = dict(center=1.5, noise=0.4)              # clusters 4.2 apart, 0.4 SD each
 SPIRAL = dict(K=4 * np.pi, noise=0.1)             # two turns; neighbouring arms 0.5 apart
+SD = {'low': 0.05, 'high': 0.25}                  # augmentation noise: a tenth and a half of that 0.5 gap
+M_AUG = 1_000                                     # points per augmented dataset
+THRESHOLD = 0.7                                   # bonus: performance threshold
 JOBS = 4                                          # parallel workers
 CV = StratifiedKFold(5, shuffle=True, random_state=SEED)
 
@@ -79,6 +82,24 @@ def load(name):
     return X[~test], X[test], y[~test], y[test]
 
 
+def augment(X, y, sd, k, rng):
+    """k new datasets of M_AUG points drawn without replacement, each moved by N(0, sd^2) in every coordinate."""
+    idx = np.array([rng.choice(len(X), M_AUG, replace=False) for _ in range(k)])
+    return X[idx] + rng.normal(0, sd, (k, M_AUG, X.shape[1])), y[idx]
+
+
+def crossing(x, acc, log=False):
+    """First x at which acc falls below THRESHOLD, interpolated linearly (on log x if log); nan if acc never
+    crosses it from above."""
+    acc, t = np.asarray(acc), np.log(x) if log else np.asarray(x, float)
+    i = int(np.argmax(acc < THRESHOLD))
+    if i == 0:
+        return np.nan
+    w = (acc[i - 1] - THRESHOLD) / (acc[i - 1] - acc[i])
+    v = (1 - w) * t[i - 1] + w * t[i]
+    return np.exp(v) if log else v
+
+
 def best_svm(name):
     """The SVM used from part 4 on: part 2's linear SVM for the clusters, part 3's winning kernel for the spiral."""
     if name == 'linear':
@@ -94,6 +115,13 @@ def scatter(ax, X, y, s=2, alpha=0.5, pad=0.15):
         ax.plot([], [], 'o', ms=5, color=CLASS[c], label=f'class {c}')
     lo, hi = X[:, :2].min() - pad, X[:, :2].max() + pad
     ax.set(xlim=(lo, hi), ylim=(lo, hi), aspect='equal', xlabel='$X_1$', ylabel='$X_2$')
+
+
+def threshold(ax, x=None):
+    """The THRESHOLD line in percent, labelled at x when given."""
+    ax.axhline(100 * THRESHOLD, color=INK, lw=0.8, ls='--')
+    if x is not None:
+        ax.text(x, 100 * THRESHOLD + 1, f'{100 * THRESHOLD:.0f}% threshold', fontsize=9, color=TEXT)
 
 
 def save(fig, name):
