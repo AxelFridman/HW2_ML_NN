@@ -6,18 +6,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from scipy.special import logsumexp
 from scipy.stats import rankdata
-from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.svm import SVC
 
-from common import (AQUA, GENERATORS, INK, JOBS, M_AUG, MUTED, NAMES, OUT, SD, SPIRAL, THRESHOLD, R, arm, augment,
+from common import (AQUA, GENERATORS, INK, JOBS, M_AUG, MUTED, NAMES, OUT, SD, SPIRAL, THRESHOLD, R, augment, bayes,
                     best_svm, crossing, decision, load, save, save_tex, scatter, stream, threshold)
 
 K = 10_000                                         # augmented datasets per SD, k >> 1000
 SWEEP, K_SWEEP = np.geomspace(0.01, 5, 30), 200    # from a tenth of the spiral's noise to past the clusters' gap
 OVERFIT = dict(kernel='rbf', gamma=1000, C=1000)   # kernel 5x narrower than the noise: memorises the points
-ARMS = [arm(np.linspace(0, SPIRAL['K'], 400), c) for c in (0, 1)]  # t-grid for the Bayes likelihood integral
 METRICS = [('accuracy', 'acc', 100, '.1f'), ('F1', 'fOne', 1, '.3f'), ('AUC', 'auc', 1, '.3f')]
 
 
@@ -25,14 +22,6 @@ def chunked(f, X):
     """f on all points of the k datasets X (k x M x d), computed in parallel chunks."""
     chunks = np.array_split(X.reshape(-1, X.shape[-1]), math.ceil(X.shape[0] * X.shape[1] / 10_000))
     return np.concatenate(Parallel(n_jobs=JOBS)(delayed(f)(c) for c in chunks)).reshape(X.shape[:2])
-
-
-def bayes(name, X, sd):
-    """Log-likelihood ratio of class 1 to class 0 at X under part 1's generator with total noise SD sd."""
-    if name == 'linear':
-        return X[:, 0] + X[:, 1]        # proportional to it for two equal round Gaussians
-    ll = [logsumexp(-euclidean_distances(X, a, squared=True) / (2 * sd ** 2), axis=1) for a in ARMS]
-    return ll[1] - ll[0]
 
 
 def predictors(models, name, sd):

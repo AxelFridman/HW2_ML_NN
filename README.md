@@ -14,7 +14,7 @@ parameters (size, noise, number of spiral turns, `r(t)` and `angle(t)`) and the 
 
 | File | What it does |
 |---|---|
-| `common.py` | Seed, generators and their parameters, data loader, augmentation, label shuffling, 70% crossing, best SVM, a fast numpy SVM decision function, plot style, LaTeX macros |
+| `common.py` | Seed, generators and their parameters, data loader, augmentation, label shuffling, the Bayes classifier, 70% crossing, best SVM, a fast numpy SVM decision function, plot style, LaTeX macros |
 | `simulate.py` | Part 1: both datasets (n = 10,000), a stratified 70/30 split, `data/linear.csv` and `data/spiral.csv`, scatter plots |
 | `perceptron.py` | Part 2: 20 perceptrons against a linear SVM on both datasets |
 | `kernels.py` | Part 3: RBF against polynomial kernel on the spiral, tuned by 5-fold CV; the winner goes to `out/best.json` |
