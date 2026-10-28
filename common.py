@@ -27,8 +27,11 @@ SPIRAL = dict(K=4 * np.pi, noise=0.1)             # two turns; neighbouring arms
 SD = {'low': 0.05, 'high': 0.25}                  # augmentation noise: a tenth and a half of that 0.5 gap
 M_AUG = 1_000                                     # points per augmented dataset
 THRESHOLD = 0.7                                   # bonus: performance threshold
+REPS = 5                                          # label shuffles per level in parts 5 and 6
 JOBS = 4                                          # parallel workers
 CV = StratifiedKFold(5, shuffle=True, random_state=SEED)
+WORD = {0: 'Zero', 2: 'Two', 5: 'Five', 10: 'Ten', 15: 'Fifteen', 25: 'TwentyFive', 50: 'Fifty', 75: 'SeventyFive',
+        90: 'Ninety', 100: 'Hundred'}             # LaTeX macro names cannot hold digits
 
 BLUE, ORANGE, AQUA, YELLOW = '#2a78d6', '#eb6834', '#1baf7a', '#eda100'
 CLASS = [BLUE, ORANGE]
@@ -88,6 +91,13 @@ def augment(X, y, sd, k, rng):
     """k new datasets of M_AUG points drawn without replacement, each moved by N(0, sd^2) in every coordinate."""
     idx = np.array([rng.choice(len(X), M_AUG, replace=False) for _ in range(k)])
     return X[idx] + rng.normal(0, sd, (k, M_AUG, X.shape[1])), y[idx]
+
+
+def shuffle_labels(y, p, rng):
+    """Permute the labels of a random p% of the points among themselves."""
+    y, idx = y.copy(), rng.choice(len(y), round(p / 100 * len(y)), replace=False)
+    y[idx] = y[rng.permutation(idx)]
+    return y
 
 
 def crossing(x, acc, log=False):
