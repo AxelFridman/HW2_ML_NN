@@ -1,10 +1,12 @@
 """Seed, dataset generators, paths, plot style and helpers shared by all scripts."""
+import json
 import os
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.svm import SVC
 
 matplotlib.use('Agg')
 
@@ -72,6 +74,14 @@ def load(name):
     d = pd.read_csv(os.path.join(DATA, f'{name}.csv'))
     X, y, test = d[['x1', 'x2']].values, d['y'].values, (d['split'] == 'test').values
     return X[~test], X[test], y[~test], y[test]
+
+
+def best_svm(name):
+    """The SVM used from part 4 on: part 2's linear SVM for the clusters, part 3's winning kernel for the spiral."""
+    if name == 'linear':
+        return SVC(kernel='linear', C=1)
+    with open(os.path.join(OUT, 'best.json')) as f:
+        return SVC(**json.load(f))
 
 
 def scatter(ax, X, y, s=2, alpha=0.5, pad=0.15):
