@@ -1,11 +1,13 @@
 """Seed, dataset generators, paths, plot style and helpers shared by all scripts."""
 import json
+import math
 import os
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import StratifiedKFold
 from sklearn.svm import SVC
 
@@ -106,6 +108,16 @@ def best_svm(name):
         return SVC(kernel='linear', C=1)
     with open(os.path.join(OUT, 'best.json')) as f:
         return SVC(**json.load(f))
+
+
+def decision(model, X, chunk=1000):
+    """model.decision_function(X) computed in numpy: the same values, several times faster for millions of points."""
+    if model.kernel == 'linear':
+        return X @ model.coef_[0] + model.intercept_[0]
+    if model.kernel != 'rbf' or isinstance(model.gamma, str):
+        return model.decision_function(X)
+    return np.concatenate([rbf_kernel(p, model.support_vectors_, gamma=model.gamma) @ model.dual_coef_[0]
+                           for p in np.array_split(X, math.ceil(len(X) / chunk))]) + model.intercept_[0]
 
 
 def scatter(ax, X, y, s=2, alpha=0.5, pad=0.15):

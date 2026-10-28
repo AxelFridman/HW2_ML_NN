@@ -12,7 +12,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.svm import SVC
 
 from common import (AQUA, GENERATORS, INK, JOBS, M_AUG, MUTED, NAMES, OUT, SD, SPIRAL, THRESHOLD, R, arm, augment,
-                    best_svm, crossing, load, save, save_tex, scatter, stream, threshold)
+                    best_svm, crossing, decision, load, save, save_tex, scatter, stream, threshold)
 
 K = 10_000                                         # augmented datasets per SD, k >> 1000
 SWEEP, K_SWEEP = np.geomspace(0.01, 5, 30), 200    # from a tenth of the spiral's noise to past the clusters' gap
@@ -37,7 +37,7 @@ def bayes(name, X, sd):
 
 def predictors(models, name, sd):
     """Score function of each model and of the Bayes classifier at augmentation SD sd."""
-    f = {key: m.decision_function for key, m in models.items()}
+    f = {key: partial(decision, m) for key, m in models.items()}
     f['bayes'] = partial(bayes, name, sd=np.hypot(GENERATORS[name][1]['noise'], sd))
     return f
 
@@ -91,7 +91,7 @@ for name, g in sweep.groupby('dataset'):
 
 lim = (-R(SPIRAL['K']) - 0.6, R(SPIRAL['K']) + 0.6)
 xx, yy = np.meshgrid(np.linspace(*lim, 300), np.linspace(*lim, 300))
-f = boundary.decision_function(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+f = decision(boundary, np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
 f[np.hypot(xx, yy) > R(SPIRAL['K']) + 0.3] = np.nan     # beyond the data the boundary is arbitrary
 fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
 for i, (level, (X, y, pred)) in enumerate(shown.items()):
