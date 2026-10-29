@@ -7,8 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.special import logsumexp
-from sklearn.metrics.pairwise import euclidean_distances, rbf_kernel
+from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import StratifiedKFold
 from sklearn.svm import SVC
 
@@ -79,15 +78,6 @@ def spiral(rng, K, noise, n=N, r=R, angle=ANGLE):
 
 GENERATORS = {'linear': (linear, LINEAR), 'spiral': (spiral, SPIRAL)}
 NAMES = list(GENERATORS)
-ARMS = [arm(np.linspace(0, SPIRAL['K'], 400), c) for c in (0, 1)]  # t-grid for the Bayes likelihood integral
-
-
-def bayes(name, X, sd):
-    """Log-likelihood ratio of class 1 to class 0 at X under part 1's generator with total noise SD sd."""
-    if name == 'linear':
-        return X[:, 0] + X[:, 1]        # proportional to it for two equal round Gaussians
-    ll = [logsumexp(-euclidean_distances(X, a, squared=True) / (2 * sd ** 2), axis=1) for a in ARMS]
-    return ll[1] - ll[0]
 
 
 def load(name):

@@ -9,8 +9,8 @@ from joblib import Parallel, delayed
 from scipy.stats import rankdata
 from sklearn.svm import SVC
 
-from common import (AQUA, GENERATORS, INK, JOBS, M_AUG, MUTED, NAMES, OUT, SD, SPIRAL, THRESHOLD, R, augment, bayes,
-                    best_svm, crossing, decision, load, save, save_tex, scatter, stream, threshold)
+from common import (AQUA, INK, JOBS, M_AUG, MUTED, NAMES, OUT, SD, SPIRAL, THRESHOLD, R, augment, best_svm, crossing,
+                    decision, load, save, save_tex, scatter, stream, threshold)
 
 K = 10_000                                         # augmented datasets per SD, k >> 1000
 SWEEP, K_SWEEP = np.geomspace(0.01, 5, 30), 200    # from a tenth of the spiral's noise to past the clusters' gap
@@ -22,13 +22,6 @@ def chunked(f, X):
     """f on all points of the k datasets X (k x M x d), computed in parallel chunks."""
     chunks = np.array_split(X.reshape(-1, X.shape[-1]), math.ceil(X.shape[0] * X.shape[1] / 10_000))
     return np.concatenate(Parallel(n_jobs=JOBS)(delayed(f)(c) for c in chunks)).reshape(X.shape[:2])
-
-
-def predictors(models, name, sd):
-    """Score function of each model and of the Bayes classifier at augmentation SD sd."""
-    f = {key: partial(decision, m) for key, m in models.items()}
-    f['bayes'] = partial(bayes, name, sd=np.hypot(GENERATORS[name][1]['noise'], sd))
-    return f
 
 
 def metrics(score, y):
@@ -52,31 +45,28 @@ for d, name in enumerate(NAMES):
         nums[f'test{name}{key}'] = f'{100 * m.score(Xte, yte):.1f}'
     for j, (level, sd) in enumerate(SD.items()):
         Xa, ya = augment(Xtr, ytr, sd, K, stream(4, d, j))
-        for key, f in predictors({'best': models['best']}, name, sd).items():
-            s = chunked(f, Xa)
-            tables.append(metrics(s, ya).assign(dataset=name, level=level, model=key))
-            if name == 'spiral' and key == 'best':
-                shown[level] = Xa[0], ya[0], s[0] > 0
+        s = chunked(partial(decision, models['best']), Xa)
+        tables.append(metrics(s, ya).assign(dataset=name, level=level))
+        if name == 'spiral':
+            shown[level] = Xa[0], ya[0], s[0] > 0
     for j, sd in enumerate(SWEEP):
         Xa, ya = augment(Xtr, ytr, sd, K_SWEEP, stream(4, d, 2, j))
         sweep.append({'dataset': name, 'sd': sd,
-                      **{key: np.mean((chunked(f, Xa) > 0) == ya) for key, f in predictors(models, name, sd).items()}})
+                      **{key: np.mean((chunked(partial(decision, m), Xa) > 0) == ya) for key, m in models.items()}})
     print(name, 'done', flush=True)
 
 res = pd.concat(tables)
-summary = res.groupby(['dataset', 'model', 'level']).agg(['mean', 'std'])
+summary = res.groupby(['dataset', 'level']).agg(['mean', 'std'])
 summary.to_csv(f'{OUT}/augment.csv')
 sweep = pd.DataFrame(sweep)
 sweep.to_csv(f'{OUT}/augment_sweep.csv', index=False)
-for (name, model, level), r in summary.iterrows():
+for (name, level), r in summary.iterrows():
     for metric, short, scale, fmt in METRICS:
-        tag = f'{short}{name}{model}{level}'
-        nums[tag] = f'{scale * r[(metric, "mean")]:{fmt}}'
-        nums[tag + 'SD'] = f'{scale * r[(metric, "std")]:{fmt}}'
+        nums[f'{short}{name}{level}'] = f'{scale * r[(metric, "mean")]:{fmt}}'
+        nums[f'{short}{name}{level}SD'] = f'{scale * r[(metric, "std")]:{fmt}}'
 for name, g in sweep.groupby('dataset'):
-    for key in ['best', 'bayes'] + (['overfit'] if name == 'spiral' else []):
+    for key in ['best'] + (['overfit'] if name == 'spiral' else []):
         nums[f'star{name}{key}'] = f'{crossing(g.sd.values, g[key].values, log=True):#.2g}'
-    nums[f'gapBayes{name}'] = f'{100 * (g.bayes - g.best).max():.1f}'
 
 lim = (-R(SPIRAL['K']) - 0.6, R(SPIRAL['K']) + 0.6)
 xx, yy = np.meshgrid(np.linspace(*lim, 300), np.linspace(*lim, 300))
@@ -99,9 +89,6 @@ style = {('spiral', 'best'): dict(color=AQUA, label='spiral: best SVM'),
 for (name, key), kw in style.items():
     g = sweep[sweep.dataset == name]
     ax.plot(g.sd, 100 * g[key], **kw)
-for name, g in sweep.groupby('dataset'):
-    ax.plot(g.sd, 100 * g.bayes, color=MUTED, ls=':', lw=1.5,
-            label='Bayes (new points)' if name == 'linear' else None)
 for j, sd in enumerate(SD.values()):
     ax.axvline(sd, color=MUTED, lw=0.8, alpha=0.5, label='low and high SD' if j == 0 else None)
 threshold(ax, 0.011)
